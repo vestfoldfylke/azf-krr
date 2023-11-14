@@ -1,0 +1,34 @@
+{
+  "name": "azf-krr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard",
+    "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
+    "dev": "func start",
+    "deploy:test": "func azure functionapp publish test-func-krr-v1",
+    "deploy:prod": "func azure functionapp publish prod-func-krr-v1"
+  },
+  "keywords": [
+    "vtfk",
+    "difi",
+    "digdir",
+    "krr",
+    "kor",
+    "kontakt- og reservasjonsregisteret"
+  ],
+  "author": "Mats Andreassen <matsand@live.no> (https://github.com/matsand)",
+  "license": "MIT",
+  "dependencies": {
+    "@vtfk/logger": "^5.0.2",
+    "@vtfk/maskinporten-auth": "^2.0.4",
+    "axios": "^1.6.1",
+    "jsonwebtoken": "^9.0.0",
+    "nanoid": "3.1.32",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "standard": "16.0.4"
+  }
+}
