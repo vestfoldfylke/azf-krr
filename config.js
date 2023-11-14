@@ -1,5 +1,3 @@
-const { readFileSync } = require('fs')
-
 module.exports = {
   krr: {
     url: process.env.KRR_URL || 'https://krr.digdir.no/rest/v1/personer'

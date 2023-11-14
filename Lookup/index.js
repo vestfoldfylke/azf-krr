@@ -6,7 +6,6 @@ const HTTPError = require('../lib/http-error')
 const config = require('../config')
 
 module.exports = async function (context, req) {
-
   try {
     const { body } = req
     if (!Array.isArray(body)) throw new HTTPError(400, 'Payload must be an array!')
