@@ -16,7 +16,15 @@ module.exports = async function (context, req) {
     const persons = await getData(config.krr.url, { personidentifikatorer: body }, token.access_token)
     logger('info', ['lookup', 'returning persons', persons.personer ? persons.personer.length : 0], context)
 
-    return getResponseObject(persons)
+    if (req.query.includeInactive === 'true') {
+      logger('info', ['lookup', 'queryParam includeInactive is true returning all persons'], context)
+      return getResponseObject(persons)
+    }
+
+    const result = {
+      personer: persons.personer ? persons.personer.filter(p => typeof p.status === 'string' && p.status.toUpperCase() === 'AKTIV') : []
+    }
+    return getResponseObject(result)
   } catch (error) {
     logger('error', ['lookup', 'err', error.response?.data || error.message], context)
 

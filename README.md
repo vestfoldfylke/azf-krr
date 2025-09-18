@@ -8,7 +8,12 @@ Henter token fra maskinporten ved hjelp av [server-til-server oauth2](https://do
 
 ### GET ```/lookup```
 
-**Request**
+**Query params**
+lookup?includeInactive=true
+
+Defaults to false, and response only include persons with status === "AKTIV"
+
+**Request body**
 A array with one or more personal ids.
 
 ```json
