@@ -48,7 +48,7 @@ A array with one or more personal ids.
 
 ### Application settings (``local.settings.json``)
 
-```json
+```json5
 {
   "IsEncrypted": false,
   "Values": {
@@ -57,10 +57,10 @@ A array with one or more personal ids.
     "MASKINPORTEN_ISSUER": "clientId fra integrasjon i samarbeidsportalen",
     "MASKINPORTEN_AUDIENCE": "https://{miljo}.maskinporten.no/",
     "MASKINPORTEN_TOKEN_URL": "https://{miljo}.maskinporten.no/token",
-    "MASKINPORTEN_SCOPE": "scopet du vil ha",
-    "CERTIFICATE_PFX_PATH": "path to test virkomshetssertifikat", // For lokal utvikling
-    "CERTIFICATE_PASSPHRASE": "password for test virkomshetssertifikat",  // For lokal utvikling
-    "CERTIFICATE_PFX_BASE64": "henvisning til virksomhetssertifikatet i keyvault", // For produksjon og test - husk å gi azure function managed identity tilgang til secrets i keyvaulten
+    "MASKINPORTEN_SCOPE": "scope du vil ha",
+    "CERTIFICATE_PFX_PATH": "path to test virksomhetssertifikat", // For lokal utvikling
+    "CERTIFICATE_PASSPHRASE": "password for test virksomhetssertifikat",  // For lokal utvikling
+    "CERTIFICATE_PFX_BASE64": "henvisning til virksomhetssertifikatet i key vault", // For produksjon og test - husk å gi azure function managed identity tilgang til secrets i key vault
     "KRR_URL": "https://{miljo}.kontaktregisteret.no/rest/v1/personer",
     "NODE_ENV": "dev prod eller hva du vil"
   }
