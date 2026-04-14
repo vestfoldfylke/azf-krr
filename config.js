@@ -9,7 +9,7 @@ module.exports = {
     pfxBase64: process.env.CERTIFICATE_PFX_BASE64 ?? 'ukjent pfxBase64'
   },
   maskinporten: {
-    scope: process.env.MASKINPORTEN_SCOPE ?? 'et skup',
+    scope: process.env.MASKINPORTEN_SCOPE ?? 'et scope',
     audience: process.env.MASKINPORTEN_AUDIENCE ?? 'et publikum',
     issuer: process.env.MASKINPORTEN_ISSUER ?? 'utsteder',
     tokenUrl: process.env.MASKINPORTEN_TOKEN_URL ?? 'token.com'

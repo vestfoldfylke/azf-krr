@@ -3,29 +3,31 @@
   "version": "1.1.0",
   "description": "KRR Azure function",
   "scripts": {
-    "test": "standard",
+    "test": "biome check",
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
-    "dev": "func start",
-    "deploy:test": "func azure functionapp publish test-func-krr-v1",
-    "deploy:prod": "func azure functionapp publish prod-func-krr-v1"
+    "dev": "npm run test && func start"
   },
   "keywords": [
-    "vtfk",
+    "vfk",
     "difi",
     "digdir",
     "krr",
     "kor",
     "kontakt- og reservasjonsregisteret"
   ],
-  "author": "Mats Andreassen <matsand@live.no> (https://github.com/matsand)",
+  "author": {
+    "name": "Rune Moskvil Lyngås",
+    "email": "rune.moskvil.lyngas@vestfoldfylke.no",
+    "url": "https://github.com/runely"
+  },
   "license": "MIT",
   "dependencies": {
-    "@vtfk/logger": "^6.3.3",
+    "@vestfoldfylke/loglady": "^1.5.3",
     "@vtfk/maskinporten-auth": "^2.0.6",
-    "axios": "^1.6.1",
     "node-cache": "^5.1.2"
   },
   "devDependencies": {
-    "standard": "16.0.4"
+    "@biomejs/biome": "2.4.11",
+    "@types/node": "^25.6.0"
   }
 }
