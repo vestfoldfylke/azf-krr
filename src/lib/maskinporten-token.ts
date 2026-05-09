@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { logger } from '@vestfoldfylke/loglady'
-import NodeCache from 'node-cache'
+import { TtlCache } from './ttl-cache'
 import config from '../config'
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -20,7 +20,7 @@ export interface MaskinportenTokenResponse {
   expires_in: number
 }
 
-const cache = new NodeCache({ stdTTL: 3600 })
+const cache = new TtlCache()
 
 const getMaskinportenToken = async (forceNew = false): Promise<MaskinportenTokenResponse> => {
   const cacheKey = 'maskinportenTokenKrr'
