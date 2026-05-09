@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   krr: {
     url: process.env.KRR_URL || 'https://krr.digdir.no/rest/v1/personer'
   },
@@ -15,3 +15,5 @@ module.exports = {
     tokenUrl: process.env.MASKINPORTEN_TOKEN_URL ?? 'token.com'
   }
 }
+
+export default config
