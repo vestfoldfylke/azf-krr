@@ -1,11 +1,8 @@
 import type { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { app } from '@azure/functions'
 import { logger } from '@vestfoldfylke/loglady'
-import config from '../config'
-import { getData } from '../lib/get-data'
-import { getResponseObject } from '../lib/get-response-object'
+import { krr } from '../lib/krr'
 import HTTPError from '../lib/http-error'
-import getMaskinportenToken from '../lib/maskinporten-token'
 
 interface KrrPerson {
   status?: string
@@ -20,29 +17,30 @@ interface KrrResponse {
 async function lookup(request: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> {
   try {
     const body = await request.json()
+    
     if (!Array.isArray(body)) {
-      logger.error('lookup - err - Payload must be an array!')
-      return new HTTPError(400, 'Payload must be an array!').toJSON()
+      throw new HTTPError(400, 'Request body must be an array of person identifiers')
     }
 
-    const token = await getMaskinportenToken()
-    if (!token) {
-      logger.error('lookup - err - Unable to get token')
-      return new HTTPError(500, 'Unable to get token').toJSON()
+    // Check that all items in the body array are numerical strings of length 11 (Norwegian national identifiers)
+    if (!body.every((item) => typeof item === 'string' && item.length === 11 && /^\d{11}$/.test(item))) {
+      throw new HTTPError(400, 'All items in the request body array must be strings of 11 digits')
     }
 
-    const persons = (await getData(config.krr.url, { personidentifikatorer: body }, token.access_token)) as KrrResponse
+    const persons = (await krr(body)) as KrrResponse
     logger.info('lookup - returning persons - {PersonCount}', persons.personer ? persons.personer.length : 0)
 
     if (request.query.get('includeInactive') === 'true') {
       logger.info('lookup - queryParam includeInactive is true, returning all persons')
-      return getResponseObject(persons)
+      return { status: 200, jsonBody: persons }
     }
 
-    const result: KrrResponse = {
+    const activePersons: KrrResponse = {
       personer: persons.personer ? persons.personer.filter((p) => typeof p.status === 'string' && p.status.toUpperCase() === 'AKTIV') : []
     }
-    return getResponseObject(result)
+
+    return { status: 200, jsonBody: activePersons }
+
   } catch (error) {
     logger.errorException(error, 'lookup failed')
 
@@ -51,7 +49,7 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
     }
 
     const err = error as Error
-    return new HTTPError(500, 'An unknown error occured', err.stack || err.toString()).toJSON()
+    return new HTTPError(500, 'An unknown error occured', err.toString()).toJSON()
   }
 }
 
