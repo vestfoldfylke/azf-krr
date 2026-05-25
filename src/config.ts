@@ -1,6 +1,6 @@
 const config = {
   krr: {
-    url: process.env.KRR_URL || 'https://krr.digdir.no/rest/v1/personer'
+    url: process.env.KRR_URL
   },
   env: process.env.NODE_ENV ?? 'dev',
   maskinporten: {

@@ -44,6 +44,28 @@ A array with one or more personal ids.
 }
 ```
 
+## Maskinporten setup
+- Logg på samarbeidsportalen / sjolvbetjening hos digdir (du må ha tilgang til å logge på, og bruke KRR-scopet) [les mer på docs.digdir.no](https://docs.digdir.no/docs/Kontaktregisteret/oppslagstjenesten_rest.html)
+- Lag en ny klient (klient-id skal brukes i env)
+- Legg til scope: krr:global/kontaktinformasjon.read på klienten
+- Opprett en ny nøkkel. Id-til nøkkel skal brukes i MASKINPORTEN_KID i env. Anbefales at du får en automatisk generert nøkkel, men du kan også laste opp en hvis du trenger.
+- Base64-encode nøkkelen, enkleste er å lagre den til fil og encode den derfra:
+
+```js
+const { readFileSync, writeFileSync } = require('node:fs') // import { readFileSync, writeFileSync } from 'node:fs' if you are using ES modules
+
+// Read private key from file
+const privateKey = readFileSync('./cert/maskinporten_private.key', 'utf8')
+
+// Convert to base64 string
+const privateKeyBase64 = Buffer.from(privateKey).toString('base64')
+
+// Write the base64 string to a new file (optional)
+writeFileSync('./cert/maskinporten_private-base64.key', privateKeyBase64, 'utf8')
+```
+
+- Base64-encoded nøkkel legges i MASKINPORTEN_PRIVATE_KEY_BASE64 i env
+
 ## Azure Function
 
 ### Application settings (``local.settings.json``)
@@ -53,16 +75,13 @@ A array with one or more personal ids.
   "IsEncrypted": false,
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "AzureWebJobsStorage": "",
-    "MASKINPORTEN_ISSUER": "clientId fra integrasjon i samarbeidsportalen",
-    "MASKINPORTEN_AUDIENCE": "https://{miljo}.maskinporten.no/",
-    "MASKINPORTEN_TOKEN_URL": "https://{miljo}.maskinporten.no/token",
-    "MASKINPORTEN_SCOPE": "scope du vil ha",
-    "CERTIFICATE_PFX_PATH": "path to test virksomhetssertifikat", // For lokal utvikling
-    "CERTIFICATE_PASSPHRASE": "password for test virksomhetssertifikat",  // For lokal utvikling
-    "CERTIFICATE_PFX_BASE64": "henvisning til virksomhetssertifikatet i key vault", // For produksjon og test - husk å gi azure function managed identity tilgang til secrets i key vault
-    "KRR_URL": "https://{miljo}.kontaktregisteret.no/rest/v1/personer",
-    "NODE_ENV": "dev prod eller hva du vil"
+    "KRR_URL": "https://<env>.kontaktregisteret.no/rest/v2/personer",
+    "MASKINPORTEN_DISCOVERY_URL": "https://<env>.maskinporten.no/.well-known/oauth-authorization-server",
+    "MASKINPORTEN_SCOPE": "krr:global/kontaktinformasjon.read",
+    "MASKINPORTEN_CLIENT_ID": "<din klient id>",
+    "MASKINPORTEN_KID": "<din key identifier>",
+    "MASKINPORTEN_PRIVATE_KEY_BASE64": "<private key, base64 encoded>",
+    "NODE_ENV": "<env>"
   }
 }
 ```
