@@ -28,8 +28,7 @@
   "license": "MIT",
   "dependencies": {
     "@azure/functions": "^4.5.0",
-    "@vestfoldfylke/loglady": "^1.5.3",
-    "@vtfk/maskinporten-auth": "^2.0.6"
+    "@vestfoldfylke/loglady": "^1.5.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.11",
