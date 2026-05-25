@@ -1,8 +1,8 @@
 import type { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { app } from '@azure/functions'
 import { logger } from '@vestfoldfylke/loglady'
-import { krr } from '../lib/krr'
 import HTTPError from '../lib/http-error'
+import { krr } from '../lib/krr'
 
 interface KrrPerson {
   status?: string
@@ -17,7 +17,7 @@ interface KrrResponse {
 async function lookup(request: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> {
   try {
     const body = await request.json()
-    
+
     if (!Array.isArray(body)) {
       throw new HTTPError(400, 'Request body must be an array of person identifiers')
     }
@@ -40,7 +40,6 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
     }
 
     return { status: 200, jsonBody: activePersons }
-
   } catch (error) {
     logger.errorException(error, 'lookup failed')
 

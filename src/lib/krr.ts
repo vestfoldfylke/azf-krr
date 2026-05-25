@@ -18,7 +18,7 @@ export const krr = async (identifiers: string[]): Promise<unknown> => {
     },
     body: JSON.stringify({ personidentifikatorer: identifiers })
   })
-  
+
   if (!response.ok) {
     const errorText = await response.text()
     logger.error(
@@ -33,5 +33,3 @@ export const krr = async (identifiers: string[]): Promise<unknown> => {
 
   return await response.json()
 }
-
-

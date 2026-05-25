@@ -1,7 +1,7 @@
-import { logger } from '@vestfoldfylke/loglady'
-import { TtlCache } from './ttl-cache'
-import config from '../config.js'
 import { createPrivateKey, randomUUID, sign } from 'node:crypto'
+import { logger } from '@vestfoldfylke/loglady'
+import config from '../config.js'
+import { TtlCache } from './ttl-cache'
 
 interface MaskinportenTokenResponse {
   access_token: string
@@ -19,33 +19,42 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
   if (!config.maskinporten.discoveryUrl) {
     throw new Error('Discovery URL for Maskinporten is not configured')
   }
+
   if (!config.maskinporten.privateKeyBase64) {
     throw new Error('Private key for Maskinporten is not configured')
   }
+
   if (!config.maskinporten.kid) {
     throw new Error('Key ID (kid) for Maskinporten is not configured')
   }
+
   if (!config.maskinporten.clientId) {
     throw new Error('Client ID for Maskinporten is not configured')
   }
+
   if (!config.maskinporten.scope) {
     throw new Error('Scope for Maskinporten is not configured')
   }
 
   const discoveryResponse = await fetch(config.maskinporten.discoveryUrl)
-  
+
   if (!discoveryResponse.ok) {
     try {
       const errorText = await discoveryResponse.text()
-      logger.error('Failed to fetch discovery document, status: {Status}, response: {Response}', { Status: discoveryResponse.status, Response: errorText })
+
+      logger.error('Failed to fetch discovery document, status: {Status}, response: {Response}', {
+        Status: discoveryResponse.status,
+        Response: errorText
+      })
     } catch (error) {
       logger.errorException(error, 'Failed to read discovery document error response')
     }
+
     throw new Error(`Failed to fetch discovery document, status: ${discoveryResponse.status}`)
   }
 
   const discoveryData: MaskinportenDiscoveryData = await discoveryResponse.json()
-  
+
   const privateKeyPem: string = Buffer.from(config.maskinporten.privateKeyBase64, 'base64').toString('utf8')
   const keyObject = createPrivateKey(privateKeyPem)
 
@@ -53,7 +62,7 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     alg: 'RS256',
     kid: config.maskinporten.kid
   }
-  
+
   const tokenRequestPayload = {
     aud: discoveryData.issuer,
     iss: config.maskinporten.clientId,
@@ -62,10 +71,10 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     jti: randomUUID(),
     scope: config.maskinporten.scope
   }
-  
+
   const encodedHeader = Buffer.from(JSON.stringify(tokenRequestHeader)).toString('base64url')
   const encodedPayload = Buffer.from(JSON.stringify(tokenRequestPayload)).toString('base64url')
-  
+
   const dataToSign = `${encodedHeader}.${encodedPayload}`
   const signed = sign('RSA-SHA256', Buffer.from(dataToSign), keyObject).toString('base64url')
 
@@ -89,6 +98,7 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     } catch (error) {
       logger.errorException(error, 'Failed to read token response error')
     }
+
     throw new Error(`Failed to fetch token, status: ${tokenResponse.status}`)
   }
 
@@ -100,6 +110,7 @@ export const getMaskinportenToken = async (forceNew = false): Promise<string> =>
 
   if (!forceNew) {
     const cached = cache.get<string>(cacheKey)
+
     if (cached) {
       logger.info('getMaskinportenToken - Found valid token in cache, will use that instead of fetching new')
       return cached
@@ -112,6 +123,6 @@ export const getMaskinportenToken = async (forceNew = false): Promise<string> =>
   logger.info('getMaskinportenToken - Got token from Maskinporten, expires in {ExpiresIn} seconds.', token.expires_in)
   cache.set(cacheKey, token.access_token, token.expires_in)
   logger.info('getMaskinportenToken - Token stored in cache')
-  
+
   return token.access_token
 }
