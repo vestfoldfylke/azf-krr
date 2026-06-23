@@ -63,10 +63,10 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
   } catch (error) {
     if (error instanceof ResponseBodyError) {
       logger.error('Error response from Maskinporten token endpoint: {@cause} - {@description}', error.cause, error.error_description || "No error description provided")
-      throw new Error(`Error fetching token from Maskinporten: ${error.error_description || "No error description provided"}`)
+      throw new Error(`Error fetching token from Maskinporten: ${error.error_description || "No error description provided"}`, { cause: error })
     }
     logger.errorException(error, 'Unexpected error while fetching token from Maskinporten')
-    throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
   }
 
   if (!token.access_token || !token.expires_in) {
