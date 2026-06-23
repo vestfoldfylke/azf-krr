@@ -1,4 +1,4 @@
-const config = {
+export const config = {
   KRR: {
     URL: process.env.KRR_URL
   },
@@ -10,5 +10,3 @@ const config = {
     PRIVATE_KEY_BASE64: process.env.MASKINPORTEN_PRIVATE_KEY_BASE64
   }
 }
-
-export default config

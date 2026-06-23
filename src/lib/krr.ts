@@ -1,5 +1,5 @@
 import { logger } from '@vestfoldfylke/loglady'
-import config from '../config.js'
+import { config } from '../config.js'
 import { getMaskinportenToken } from './maskinporten-token.js'
 
 export type KrrPerson = {
