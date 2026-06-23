@@ -3,6 +3,7 @@
   "version": "1.2.0",
   "description": "KRR Azure function",
   "main": "dist/functions/*.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "biome check",
@@ -10,7 +11,7 @@
     "lint": "npx @biomejs/biome check",
     "lint:fix": "npx @biomejs/biome check --write",
     "refresh": "rm -rf node_modules/ && rm package-lock.json && npm i",
-    "dev": "npm run build && func start"
+    "encode-private-key": "node dev/encode-private-key-pem.ts"
   },
   "keywords": [
     "vfk",
@@ -28,7 +29,9 @@
   "license": "MIT",
   "dependencies": {
     "@azure/functions": "^4.16.0",
-    "@vestfoldfylke/loglady": "^1.5.3"
+    "@vestfoldfylke/loglady": "^2.1.0",
+    "jose": "^6.2.3",
+    "openid-client": "^6.8.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.11",

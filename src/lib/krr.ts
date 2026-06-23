@@ -1,8 +1,17 @@
 import { logger } from '@vestfoldfylke/loglady'
-import config from '../config'
-import { getMaskinportenToken } from './maskinporten-token'
+import config from '../config.js'
+import { getMaskinportenToken } from './maskinporten-token.js'
 
-export const krr = async (identifiers: string[]): Promise<unknown> => {
+export type KrrPerson = {
+  status: "AKTIV" | "IKKE_REGISTRERT" | "SLETTET"
+  [key: string]: unknown
+}
+
+export type KrrResponse = {
+  personer: KrrPerson[]
+}
+
+export const krr = async (identifiers: string[]): Promise<KrrResponse> => {
   if (!config.krr.url) {
     throw new Error('KRR URL is not configured')
   }
@@ -31,5 +40,15 @@ export const krr = async (identifiers: string[]): Promise<unknown> => {
     throw new Error(`Failed to fetch KRR data. Status: ${response.status}, StatusText: ${response.statusText}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+
+  if (!result || !Array.isArray(result.personer)) {
+    throw new Error('Invalid response from KRR')
+  }
+
+  const persons: KrrResponse = {
+    personer: result.personer
+  }
+
+  return persons
 }

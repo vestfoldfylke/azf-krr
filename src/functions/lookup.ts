@@ -1,18 +1,8 @@
 import type { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { app } from '@azure/functions'
 import { logger } from '@vestfoldfylke/loglady'
-import HTTPError from '../lib/http-error'
-import { krr } from '../lib/krr'
-
-interface KrrPerson {
-  status?: string
-  [key: string]: unknown
-}
-
-interface KrrResponse {
-  personer?: KrrPerson[]
-  [key: string]: unknown
-}
+import HTTPError from '../lib/http-error.js'
+import { type KrrResponse, krr } from '../lib/krr.js'
 
 async function lookup(request: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -22,12 +12,16 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
       throw new HTTPError(400, 'Request body must be an array of person identifiers')
     }
 
+    if (body.length > 1000) {
+      throw new HTTPError(400, 'Request body array must not contain more than 1000 items')
+    }
+
     // Check that all items in the body array are numerical strings of length 11 (Norwegian national identifiers)
     if (!body.every((item) => typeof item === 'string' && item.length === 11 && /^\d{11}$/.test(item))) {
       throw new HTTPError(400, 'All items in the request body array must be strings of 11 digits')
     }
 
-    const persons = (await krr(body)) as KrrResponse
+    const persons: KrrResponse = await krr(body)
     logger.info('lookup - returning persons - {PersonCount}', persons.personer ? persons.personer.length : 0)
 
     if (request.query.get('includeInactive') === 'true') {

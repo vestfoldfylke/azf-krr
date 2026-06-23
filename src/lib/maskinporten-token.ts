@@ -1,16 +1,13 @@
-import { createPrivateKey, randomUUID, sign } from 'node:crypto'
 import { logger } from '@vestfoldfylke/loglady'
 import config from '../config.js'
-import { TtlCache } from './ttl-cache'
+import { TtlCache } from './ttl-cache.js'
+import * as client from 'openid-client'
+import { ResponseBodyError } from 'openid-client'
+import { importPKCS8, SignJWT } from 'jose'
 
-interface MaskinportenTokenResponse {
+type MaskinportenTokenResponse = {
   access_token: string
   expires_in: number
-}
-
-interface MaskinportenDiscoveryData {
-  token_endpoint: string
-  issuer: string
 }
 
 const cache = new TtlCache()
@@ -36,85 +33,52 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     throw new Error('Scope for Maskinporten is not configured')
   }
 
-  const discoveryResponse = await fetch(config.maskinporten.discoveryUrl)
+  const maskinportenClientConfig = await client.discovery(new URL(config.maskinporten.discoveryUrl), config.maskinporten.clientId)
 
-  if (!discoveryResponse.ok) {
-    try {
-      const errorText = await discoveryResponse.text()
+  const pemPrivateKey = Buffer.from(config.maskinporten.privateKeyBase64, 'base64').toString('utf-8')
+  const privateKey = await importPKCS8(pemPrivateKey, 'RS256')
 
-      logger.error('Failed to fetch discovery document, status: {Status}, response: {Response}', {
-        Status: discoveryResponse.status,
-        Response: errorText
-      })
-    } catch (error) {
-      logger.errorException(error, 'Failed to read discovery document error response')
-    }
+  const assertion = await new SignJWT({ scope: config.maskinporten.scope })
+    .setProtectedHeader({ alg: 'RS256', kid: config.maskinporten.kid })
+    .setIssuer(config.maskinporten.clientId)
+    .setAudience(maskinportenClientConfig.serverMetadata().issuer)
+    .setIssuedAt()
+    .setExpirationTime('2m')
+    .setJti(crypto.randomUUID())
+    .sign(privateKey)
 
-    throw new Error(`Failed to fetch discovery document, status: ${discoveryResponse.status}`)
-  }
-
-  const discoveryData: MaskinportenDiscoveryData = await discoveryResponse.json()
-
-  const privateKeyPem: string = Buffer.from(config.maskinporten.privateKeyBase64, 'base64').toString('utf8')
-  const keyObject = createPrivateKey(privateKeyPem)
-
-  const tokenRequestHeader = {
-    alg: 'RS256',
-    kid: config.maskinporten.kid
-  }
-
-  const tokenRequestPayload = {
-    aud: discoveryData.issuer,
-    iss: config.maskinporten.clientId,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 120, // 2 minutes expiration
-    jti: randomUUID(),
-    scope: config.maskinporten.scope
-  }
-
-  const encodedHeader = Buffer.from(JSON.stringify(tokenRequestHeader)).toString('base64url')
-  const encodedPayload = Buffer.from(JSON.stringify(tokenRequestPayload)).toString('base64url')
-
-  const dataToSign = `${encodedHeader}.${encodedPayload}`
-  const signed = sign('RSA-SHA256', Buffer.from(dataToSign), keyObject).toString('base64url')
-
-  const clientAssertion = `${dataToSign}.${signed}`
-
-  const tokenResponse = await fetch(discoveryData.token_endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: clientAssertion
+  let token: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
+  try {
+    token = await client.genericGrantRequest(maskinportenClientConfig, 'urn:ietf:params:oauth:grant-type:jwt-bearer', {
+      assertion
     })
-  })
-
-  if (!tokenResponse.ok) {
-    try {
-      const errorText = await tokenResponse.text()
-      logger.error('Failed to fetch token, status: {Status}, response: {Response}', { Status: tokenResponse.status, Response: errorText })
-    } catch (error) {
-      logger.errorException(error, 'Failed to read token response error')
+  } catch (error) {
+    if (error instanceof ResponseBodyError) {
+      logger.error('Error response from Maskinporten token endpoint: {@cause} - {@response}', error.cause, error.response)
+      throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`)
     }
-
-    throw new Error(`Failed to fetch token, status: ${tokenResponse.status}`)
+    logger.errorException(error, 'Unexpected error while fetching token from Maskinporten')
+    throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`)
   }
 
-  return await tokenResponse.json()
+  if (!token.access_token || !token.expires_in) {
+    throw new Error('Invalid token response from Maskinporten, missing access_token or expires_in')
+  }
+
+  return {
+    access_token: token.access_token,
+    expires_in: token.expires_in
+  }
 }
 
-export const getMaskinportenToken = async (forceNew = false): Promise<string> => {
+export const getMaskinportenToken = async (): Promise<string> => {
   const cacheKey = 'maskinportenTokenKrr'
 
-  if (!forceNew) {
-    const cached = cache.get<string>(cacheKey)
+  const cached = cache.get<string>(cacheKey)
 
-    if (cached) {
-      logger.info('getMaskinportenToken - Found valid token in cache, will use that instead of fetching new')
-      return cached
-    }
+  if (cached) {
+    logger.info('getMaskinportenToken - Found valid token in cache, will use that instead of fetching new')
+    return cached
   }
 
   logger.info('getMaskinportenToken - No valid token in cache, fetching new token from Maskinporten')

@@ -48,23 +48,14 @@ A array with one or more personal ids.
 - Logg på samarbeidsportalen / sjolvbetjening hos digdir (du må ha tilgang til å logge på, og bruke KRR-scopet) [les mer på docs.digdir.no](https://docs.digdir.no/docs/Kontaktregisteret/oppslagstjenesten_rest.html)
 - Lag en ny klient (klient-id skal brukes i env)
 - Legg til scope: krr:global/kontaktinformasjon.read på klienten
-- Opprett en ny nøkkel. Id-til nøkkel skal brukes i MASKINPORTEN_KID i env. Anbefales at du får en automatisk generert nøkkel, men du kan også laste opp en hvis du trenger.
-- Base64-encode nøkkelen, enkleste er å lagre den til fil og encode den derfra:
+- Opprett en ny nøkkel. Id-til nøkkel skal brukes i MASKINPORTEN_KID i env. Anbefales at du får en automatisk generert nøkkel, men du kan også laste opp en hvis du absolutt må.
+- Base64-encode nøkkelen, enkleste er å lagre den midlertitig i ./cert/maskinporten_private.pem og kjøre:
 
-```js
-const { readFileSync, writeFileSync } = require('node:fs') // import { readFileSync, writeFileSync } from 'node:fs' if you are using ES modules
-
-// Read private key from file
-const privateKey = readFileSync('./cert/maskinporten_private.key', 'utf8')
-
-// Convert to base64 string
-const privateKeyBase64 = Buffer.from(privateKey).toString('base64')
-
-// Write the base64 string to a new file (optional)
-writeFileSync('./cert/maskinporten_private-base64.key', privateKeyBase64, 'utf8')
+```bash
+npm run encode-private-key
 ```
-
-- Base64-encoded nøkkel legges i MASKINPORTEN_PRIVATE_KEY_BASE64 i env
+- Kopier verdien du får og legg i MASKINPORTEN_PRIVATE_KEY_BASE64 i miljøvariabel
+- Slett midlertidig lagret nøkkel. Om ting går skeis får du heller lage deg en ny.
 
 ## Azure Function
 
