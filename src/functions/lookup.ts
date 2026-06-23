@@ -4,6 +4,8 @@ import { logger } from '@vestfoldfylke/loglady'
 import HTTPError from '../lib/http-error.js'
 import { type KrrResponse, krr } from '../lib/krr.js'
 
+const MAX_IDENTIFIERS_PER_REQUEST = 1000 // https://docs.digdir.no/docs/Kontaktregisteret/oppslagstjenesten_rest.html#endepunkt
+
 async function lookup(request: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> {
   try {
     const body = await request.json()
@@ -12,8 +14,8 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
       throw new HTTPError(400, 'Request body must be an array of person identifiers')
     }
 
-    if (body.length > 1000) {
-      throw new HTTPError(400, 'Request body array must not contain more than 1000 items')
+    if (body.length > MAX_IDENTIFIERS_PER_REQUEST) {
+      throw new HTTPError(400, `Request body array must not contain more than ${MAX_IDENTIFIERS_PER_REQUEST} items`)
     }
 
     // Check that all items in the body array are numerical strings of length 11 (Norwegian national identifiers)
@@ -22,7 +24,7 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
     }
 
     const persons: KrrResponse = await krr(body)
-    logger.info('lookup - returning persons - {PersonCount}', persons.personer ? persons.personer.length : 0)
+    logger.info('lookup - returning persons - {PersonCount}', persons.personer.length)
 
     if (request.query.get('includeInactive') === 'true') {
       logger.info('lookup - queryParam includeInactive is true, returning all persons')
@@ -30,7 +32,7 @@ async function lookup(request: HttpRequest, _context: InvocationContext): Promis
     }
 
     const activePersons: KrrResponse = {
-      personer: persons.personer ? persons.personer.filter((p) => typeof p.status === 'string' && p.status.toUpperCase() === 'AKTIV') : []
+      personer: persons.personer.filter((p) => typeof p.status === 'string' && p.status.toUpperCase() === 'AKTIV')
     }
 
     return { status: 200, jsonBody: activePersons }
