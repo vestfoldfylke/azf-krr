@@ -12,13 +12,13 @@ export type KrrResponse = {
 }
 
 export const krr = async (identifiers: string[]): Promise<KrrResponse> => {
-  if (!config.krr.url) {
+  if (!config.KRR.URL) {
     throw new Error('KRR URL is not configured')
   }
 
   const token = await getMaskinportenToken()
 
-  const response: Response = await fetch(config.krr.url, {
+  const response: Response = await fetch(config.KRR.URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -32,7 +32,7 @@ export const krr = async (identifiers: string[]): Promise<KrrResponse> => {
     const errorText = await response.text()
     logger.error(
       'Failed to fetch KRR data with Url: {Url}. Status: {Status}, StatusText: {StatusText}. Error: {Error}',
-      config.krr.url,
+      config.KRR.URL,
       response.status,
       response.statusText,
       errorText

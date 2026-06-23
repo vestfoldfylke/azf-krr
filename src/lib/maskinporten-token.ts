@@ -13,34 +13,34 @@ type MaskinportenTokenResponse = {
 const cache = new TtlCache()
 
 const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => {
-  if (!config.maskinporten.discoveryUrl) {
+  if (!config.MASKINPORTEN.DISCOVERY_URL) {
     throw new Error('Discovery URL for Maskinporten is not configured')
   }
 
-  if (!config.maskinporten.privateKeyBase64) {
+  if (!config.MASKINPORTEN.PRIVATE_KEY_BASE64) {
     throw new Error('Private key for Maskinporten is not configured')
   }
 
-  if (!config.maskinporten.kid) {
+  if (!config.MASKINPORTEN.KID) {
     throw new Error('Key ID (kid) for Maskinporten is not configured')
   }
 
-  if (!config.maskinporten.clientId) {
+  if (!config.MASKINPORTEN.CLIENT_ID) {
     throw new Error('Client ID for Maskinporten is not configured')
   }
 
-  if (!config.maskinporten.scope) {
+  if (!config.MASKINPORTEN.SCOPE) {
     throw new Error('Scope for Maskinporten is not configured')
   }
 
-  const maskinportenClientConfig = await client.discovery(new URL(config.maskinporten.discoveryUrl), config.maskinporten.clientId)
+  const maskinportenClientConfig = await client.discovery(new URL(config.MASKINPORTEN.DISCOVERY_URL), config.MASKINPORTEN.CLIENT_ID)
 
-  const pemPrivateKey = Buffer.from(config.maskinporten.privateKeyBase64, 'base64').toString('utf-8')
+  const pemPrivateKey = Buffer.from(config.MASKINPORTEN.PRIVATE_KEY_BASE64, 'base64').toString('utf-8')
   const privateKey = await importPKCS8(pemPrivateKey, 'RS256')
 
-  const assertion = await new SignJWT({ scope: config.maskinporten.scope })
-    .setProtectedHeader({ alg: 'RS256', kid: config.maskinporten.kid })
-    .setIssuer(config.maskinporten.clientId)
+  const assertion = await new SignJWT({ scope: config.MASKINPORTEN.SCOPE })
+    .setProtectedHeader({ alg: 'RS256', kid: config.MASKINPORTEN.KID })
+    .setIssuer(config.MASKINPORTEN.CLIENT_ID)
     .setAudience(maskinportenClientConfig.serverMetadata().issuer)
     .setIssuedAt()
     .setExpirationTime('2m')
