@@ -4,6 +4,7 @@ import { TtlCache } from './ttl-cache.js'
 import * as client from 'openid-client'
 import { ResponseBodyError } from 'openid-client'
 import { importPKCS8, SignJWT } from 'jose'
+import { randomUUID } from "node:crypto"
 
 type MaskinportenTokenResponse = {
   access_token: string
@@ -11,6 +12,9 @@ type MaskinportenTokenResponse = {
 }
 
 const cache = new TtlCache()
+
+let maskinportenClientConfig: client.Configuration | null = null
+let privateKey: CryptoKey | null = null
 
 const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => {
   if (!config.MASKINPORTEN.DISCOVERY_URL) {
@@ -33,10 +37,14 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     throw new Error('Scope for Maskinporten is not configured')
   }
 
-  const maskinportenClientConfig = await client.discovery(new URL(config.MASKINPORTEN.DISCOVERY_URL), config.MASKINPORTEN.CLIENT_ID)
+  if (!maskinportenClientConfig) {
+    maskinportenClientConfig = await client.discovery(new URL(config.MASKINPORTEN.DISCOVERY_URL), config.MASKINPORTEN.CLIENT_ID)
+  }
 
-  const pemPrivateKey = Buffer.from(config.MASKINPORTEN.PRIVATE_KEY_BASE64, 'base64').toString('utf-8')
-  const privateKey = await importPKCS8(pemPrivateKey, 'RS256')
+  if (!privateKey) {
+    const pemPrivateKey = Buffer.from(config.MASKINPORTEN.PRIVATE_KEY_BASE64, 'base64').toString('utf-8')
+    privateKey = await importPKCS8(pemPrivateKey, 'RS256')
+  }
 
   const assertion = await new SignJWT({ scope: config.MASKINPORTEN.SCOPE })
     .setProtectedHeader({ alg: 'RS256', kid: config.MASKINPORTEN.KID })
@@ -44,7 +52,7 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     .setAudience(maskinportenClientConfig.serverMetadata().issuer)
     .setIssuedAt()
     .setExpirationTime('2m')
-    .setJti(crypto.randomUUID())
+    .setJti(randomUUID())
     .sign(privateKey)
 
   let token: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
@@ -54,8 +62,8 @@ const getNewMaskinportenToken = async (): Promise<MaskinportenTokenResponse> => 
     })
   } catch (error) {
     if (error instanceof ResponseBodyError) {
-      logger.error('Error response from Maskinporten token endpoint: {@cause} - {@response}', error.cause, error.response)
-      throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`)
+      logger.error('Error response from Maskinporten token endpoint: {@cause} - {@description}', error.cause, error.error_description || "No error description provided")
+      throw new Error(`Error fetching token from Maskinporten: ${error.error_description || "No error description provided"}`)
     }
     logger.errorException(error, 'Unexpected error while fetching token from Maskinporten')
     throw new Error(`Error fetching token from Maskinporten: ${error instanceof Error ? error.message : String(error)}`)
@@ -85,7 +93,7 @@ export const getMaskinportenToken = async (): Promise<string> => {
   const token = await getNewMaskinportenToken()
 
   logger.info('getMaskinportenToken - Got token from Maskinporten, expires in {ExpiresIn} seconds.', token.expires_in)
-  cache.set(cacheKey, token.access_token, token.expires_in)
+  cache.set(cacheKey, token.access_token, token.expires_in - 5)
   logger.info('getMaskinportenToken - Token stored in cache')
 
   return token.access_token
