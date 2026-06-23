@@ -3,7 +3,7 @@ import config from '../config.js'
 import { getMaskinportenToken } from './maskinporten-token.js'
 
 export type KrrPerson = {
-  status: "AKTIV" | "IKKE_REGISTRERT" | "SLETTET"
+  status: string
   [key: string]: unknown
 }
 
@@ -46,9 +46,5 @@ export const krr = async (identifiers: string[]): Promise<KrrResponse> => {
     throw new Error('Invalid response from KRR')
   }
 
-  const persons: KrrResponse = {
-    personer: result.personer
-  }
-
-  return persons
+  return result
 }
